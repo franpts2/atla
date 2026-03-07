@@ -6,6 +6,12 @@ import mediapipe as mp
 import numpy as np
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
+from utils import overlay_png
+
+fire_img = cv2.imread('fireball.png', cv2.IMREAD_UNCHANGED)
+
+fire_size = 200
+fire_img = cv2.resize(fire_img, (fire_size, fire_size))
 
 # create hand landmarker
 base_options = python.BaseOptions(model_asset_path='hand_landmarker.task')
@@ -79,11 +85,10 @@ while cap.isOpened():
         if time.time() - state["fire_time"] < fire_duration:
             fx, fy = state["fire_pos"]
             
-            # Draw the flame
-            cv2.circle(frame, (fx, fy), 70, (0, 165, 255), 5) # Orange rim
-            cv2.circle(frame, (fx, fy), 60, (0, 0, 255), -1) # Red core
-            cv2.putText(frame, f"{label} FIRE!", (fx-60, fy-80), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            top_left_x = fx - (fire_size // 2)
+            top_left_y = fy - (fire_size // 2)
+
+            frame = overlay_png(frame, fire_img, top_left_x, top_left_y)
 
     cv2.imshow("Bending Training", frame)
     if cv2.waitKey(1) & 0xFF == ord('q'): # Q
