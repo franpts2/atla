@@ -16,9 +16,9 @@ options = vision.HandLandmarkerOptions(
 detector = vision.HandLandmarker.create_from_options(options)
 
 hands_history = {"Left": (0, 0), "Right": (0, 0)}
-punch_threshold = 30
+punch_threshold = 45
 
-fire_duration = 0.5 # seconds
+fire_duration = 0.8 # seconds
 last_fire_time = 0
 fire_pos = (0,0)
 
@@ -47,22 +47,31 @@ while cap.isOpened():
         for i, hand in enumerate(results.hand_landmarks):
             hand_label = results.handedness[i][0].category_name
 
-            index_tip = hand[8]
-            cx, cy = int(index_tip.x * w), int(index_tip.y * h)
+            # wrist tracking for stable movement
+            wrist = hand[0]
+            wx, wy = int(wrist.x * w), int(wrist.y * h)
 
-            last_x, last_y = hands_history[hand_label]
+            # is hand closed?
+            # comparing middle finger tip (12) to middle finger base (9)
+            finger_tip = hand[12]
+            finger_base = hand[9]
+            is_fist = finger_tip.y > finger_base.y
 
-            if last_x != 0:
-                distance_moved = math.hypot(cx - last_x, cy - last_y)
+            last_wx, last_wy = hands_history[hand_label]
+
+            if last_wx != 0:
+                speed = math.hypot(wx - last_wx, wy - last_wy)
 
                 # check if it's a punch
-                if distance_moved > punch_threshold:
-                    last_fire_time = time.time() # curr time
-                    fire_pos=(cx,cy)
-                else:
-                    cv2.circle(frame, (cx,cy), 15, (255,0,0), cv2.FILLED)
+                if speed > punch_threshold and is_fist:
+                    last_fire_time = time.time()
+                    fire_pos=(wx,wy)
+                    print(f"{hand_label} Fireball unleashed!")
 
-            hands_history[hand_label] = (cx,cy)
+            hands_history[hand_label] = (wx,wy)
+
+            color = (0, 255, 0) if is_fist else (255, 0, 0)
+            cv2.circle(frame, (wx, wy), 10, color, -1)
 
     if time.time() - last_fire_time < fire_duration:
         # Draw the lingering fire at the saved position
