@@ -1,4 +1,5 @@
 import math
+import random
 import time
 import cv2
 import mediapipe as mp
@@ -15,12 +16,12 @@ options = vision.HandLandmarkerOptions(
 )
 detector = vision.HandLandmarker.create_from_options(options)
 
-hands_history = {"Left": (0, 0), "Right": (0, 0)}
+hand_states = {
+    "Left":  {"last_pos": (0, 0), "fire_time": 0, "fire_pos": (0, 0)},
+    "Right": {"last_pos": (0, 0), "fire_time": 0, "fire_pos": (0, 0)}
+}
 punch_threshold = 45
-
 fire_duration = 0.8 # seconds
-last_fire_time = 0
-fire_pos = (0,0)
 
 cap = cv2.VideoCapture(0)
 
@@ -46,42 +47,43 @@ while cap.isOpened():
     if results.hand_landmarks:
         for i, hand in enumerate(results.hand_landmarks):
             hand_label = results.handedness[i][0].category_name
+            state = hand_states[hand_label]
 
-            # wrist tracking for stable movement
+            # track wrist
             wrist = hand[0]
             wx, wy = int(wrist.x * w), int(wrist.y * h)
 
             # is hand closed?
-            # comparing middle finger tip (12) to middle finger base (9)
+            # comparing distance between middle finger tip (12) to wrist(0)
             finger_tip = hand[12]
-            finger_base = hand[9]
-            is_fist = finger_tip.y > finger_base.y
+            fist_dist = math.hypot(finger_tip.x - wrist.x, finger_tip.y - wrist.y)
+            is_fist = fist_dist < 0.18
 
-            last_wx, last_wy = hands_history[hand_label]
-
+            last_wx, last_wy = state["last_pos"]
             if last_wx != 0:
                 speed = math.hypot(wx - last_wx, wy - last_wy)
 
                 # check if it's a punch
                 if speed > punch_threshold and is_fist:
-                    last_fire_time = time.time()
-                    fire_pos=(wx,wy)
+                    state["fire_time"] = time.time()
+                    state["fire_pos"] = (wx, wy)
                     print(f"{hand_label} Fireball unleashed!")
 
-            hands_history[hand_label] = (wx,wy)
+            state["last_pos"] = (wx,wy)
 
             color = (0, 255, 0) if is_fist else (255, 0, 0)
             cv2.circle(frame, (wx, wy), 10, color, -1)
 
-    if time.time() - last_fire_time < fire_duration:
-        # Draw the lingering fire at the saved position
-        cv2.circle(frame, fire_pos, 70, (0, 0, 255), -1)
-        cv2.circle(frame, fire_pos, 85, (0, 165, 255), 5) # Orange outer ring
-        cv2.putText(frame, "FIRE!", (fire_pos[0]-40, fire_pos[1]-100), 
-                    cv2.FONT_HERSHEY_TRIPLEX, 2, (0, 255, 255), 3)
-
-
-    cv2.circle(frame, (center_x, center_y), 50, (0,255,0),2)
+    # draw fire
+    for label, state in hand_states.items():
+        if time.time() - state["fire_time"] < fire_duration:
+            fx, fy = state["fire_pos"]
+            
+            # Draw the flame
+            cv2.circle(frame, (fx, fy), 70, (0, 165, 255), 5) # Orange rim
+            cv2.circle(frame, (fx, fy), 60, (0, 0, 255), -1) # Red core
+            cv2.putText(frame, f"{label} FIRE!", (fx-60, fy-80), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
     cv2.imshow("Bending Training", frame)
     if cv2.waitKey(1) & 0xFF == ord('q'): # Q
