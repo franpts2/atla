@@ -1,5 +1,5 @@
 import math
-
+import time
 import cv2
 import mediapipe as mp
 import numpy as np
@@ -17,6 +17,10 @@ detector = vision.HandLandmarker.create_from_options(options)
 
 hands_history = {"Left": (0, 0), "Right": (0, 0)}
 punch_threshold = 30
+
+fire_duration = 0.5 # seconds
+last_fire_time = 0
+fire_pos = (0,0)
 
 cap = cv2.VideoCapture(0)
 
@@ -53,12 +57,19 @@ while cap.isOpened():
 
                 # check if it's a punch
                 if distance_moved > punch_threshold:
-                    cv2.circle(frame, (cx, cy), 60, (0, 0, 255), -1) # fire circle
-                    cv2.putText(frame, "FIRE!", (cx-50, cy-80), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 165, 255), 3)
+                    last_fire_time = time.time() # curr time
+                    fire_pos=(cx,cy)
                 else:
                     cv2.circle(frame, (cx,cy), 15, (255,0,0), cv2.FILLED)
 
             hands_history[hand_label] = (cx,cy)
+
+    if time.time() - last_fire_time < fire_duration:
+        # Draw the lingering fire at the saved position
+        cv2.circle(frame, fire_pos, 70, (0, 0, 255), -1)
+        cv2.circle(frame, fire_pos, 85, (0, 165, 255), 5) # Orange outer ring
+        cv2.putText(frame, "FIRE!", (fire_pos[0]-40, fire_pos[1]-100), 
+                    cv2.FONT_HERSHEY_TRIPLEX, 2, (0, 255, 255), 3)
 
 
     cv2.circle(frame, (center_x, center_y), 50, (0,255,0),2)
