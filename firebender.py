@@ -46,7 +46,9 @@ while cap.isOpened():
     cv2.circle(frame, (center_x, center_y), 50, (0,255,0),2)
 
     cv2.imshow("Bending Training", frame)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+    if cv2.waitKey(1) & 0xFF == ord('q'): # Q
+        break
+    if cv2.getWindowProperty("Bending Training", cv2.WND_PROP_VISIBLE) < 1: # window closed
         break
 
 cap.release()
