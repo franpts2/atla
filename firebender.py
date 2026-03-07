@@ -15,9 +15,8 @@ options = vision.HandLandmarkerOptions(
 )
 detector = vision.HandLandmarker.create_from_options(options)
 
-# hand's last position
-prev_x, prev_y = 0, 0
-punch_threshold = 50 # 50px needed to move
+hands_history = {"Left": (0, 0), "Right": (0, 0)}
+punch_threshold = 30
 
 cap = cv2.VideoCapture(0)
 
@@ -41,21 +40,25 @@ while cap.isOpened():
     results = detector.detect_for_video(mp_image, timestamp)
 
     if results.hand_landmarks:
-        for hand in results.hand_landmarks:
-            # index finger = landmark 8
+        for i, hand in enumerate(results.hand_landmarks):
+            hand_label = results.handedness[i][0].category_name
+
             index_tip = hand[8]
             cx, cy = int(index_tip.x * w), int(index_tip.y * h)
 
-            distance_moved = math.hypot(cx - prev_x, cy - prev_y)
+            last_x, last_y = hands_history[hand_label]
 
-            # check if it's a punch
-            if distance_moved > punch_threshold:
-                cv2.circle(frame, (cx, cy), 60, (0, 0, 255), -1) # fire circle
-                cv2.putText(frame, "FIRE!", (cx-50, cy-80), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 165, 255), 3)
-            else:
-                cv2.circle(frame, (cx,cy), 15, (255,0,0), cv2.FILLED)
+            if last_x != 0:
+                distance_moved = math.hypot(cx - last_x, cy - last_y)
 
-            prev_x, prev_y = cx, cy
+                # check if it's a punch
+                if distance_moved > punch_threshold:
+                    cv2.circle(frame, (cx, cy), 60, (0, 0, 255), -1) # fire circle
+                    cv2.putText(frame, "FIRE!", (cx-50, cy-80), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 165, 255), 3)
+                else:
+                    cv2.circle(frame, (cx,cy), 15, (255,0,0), cv2.FILLED)
+
+            hands_history[hand_label] = (cx,cy)
 
 
     cv2.circle(frame, (center_x, center_y), 50, (0,255,0),2)
