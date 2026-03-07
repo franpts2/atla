@@ -1,3 +1,5 @@
+import math
+
 import cv2
 import mediapipe as mp
 import numpy as np
@@ -12,6 +14,10 @@ options = vision.HandLandmarkerOptions(
     running_mode=vision.RunningMode.VIDEO
 )
 detector = vision.HandLandmarker.create_from_options(options)
+
+# hand's last position
+prev_x, prev_y = 0, 0
+punch_threshold = 50 # 50px needed to move
 
 cap = cv2.VideoCapture(0)
 
@@ -40,8 +46,17 @@ while cap.isOpened():
             index_tip = hand[8]
             cx, cy = int(index_tip.x * w), int(index_tip.y * h)
 
-            # circle on finger tip
-            cv2.circle(frame, (cx,cy), 15, (255,0,0), cv2.FILLED)
+            distance_moved = math.hypot(cx - prev_x, cy - prev_y)
+
+            # check if it's a punch
+            if distance_moved > punch_threshold:
+                cv2.circle(frame, (cx, cy), 60, (0, 0, 255), -1) # fire circle
+                cv2.putText(frame, "FIRE!", (cx-50, cy-80), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 165, 255), 3)
+            else:
+                cv2.circle(frame, (cx,cy), 15, (255,0,0), cv2.FILLED)
+
+            prev_x, prev_y = cx, cy
+
 
     cv2.circle(frame, (center_x, center_y), 50, (0,255,0),2)
 
