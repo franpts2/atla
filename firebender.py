@@ -1,9 +1,7 @@
 import math
-import random
 import time
 import cv2
 import mediapipe as mp
-import numpy as np
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 from utils import overlay_png
