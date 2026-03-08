@@ -58,7 +58,16 @@ while cap.isOpened():
 
             # track wrist
             wrist = hand[0]
+            knuckle = hand[9]
             wx, wy = int(wrist.x * w), int(wrist.y * h)
+            kx, ky = int(knuckle.x * w), int(knuckle.y * h)
+
+            # direction vector from wrist to knuckle
+            dx, dy = kx - wy, ky - wy
+
+            # fire above the knuckle
+            fire_spawn_x = wx + int(dx*2)
+            fire_spawn_y = wy + int(dy*2)
 
             if state["last_pos"] != (0,0):
                 curr_speed = math.hypot(wx - state["last_pos"][0], wy - state["last_pos"][1])
@@ -76,7 +85,7 @@ while cap.isOpened():
             
             if avg_speed > PUNCH_THRESHOLD and is_fist:
                 state["fire_time"] = time.time()
-                state["fire_pos"] = (wx, wy)
+                state["fire_pos"] = (fire_spawn_x, fire_spawn_y)
                 print(f"{hand_label} Fireball unleashed!")
 
             color = (0, 255, 0) if is_fist else (255, 0, 0)
