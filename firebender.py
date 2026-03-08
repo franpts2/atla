@@ -4,6 +4,7 @@ import cv2
 import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
+from collections import deque
 from utils import overlay_png
 
 fire_img = cv2.imread('fireball.png', cv2.IMREAD_UNCHANGED)
@@ -20,12 +21,14 @@ options = vision.HandLandmarkerOptions(
 )
 detector = vision.HandLandmarker.create_from_options(options)
 
+# deque to remember the last 5 speeds to filter out accidental spikes in motion
 hand_states = {
-    "Left":  {"last_pos": (0, 0), "fire_time": 0, "fire_pos": (0, 0)},
-    "Right": {"last_pos": (0, 0), "fire_time": 0, "fire_pos": (0, 0)}
+    "Left":  {"speeds": deque([0]*5, maxlen=5), "fire_time": 0, "fire_pos": (0, 0), "last_pos": (0,0)},
+    "Right": {"speeds": deque([0]*5, maxlen=5), "fire_time": 0, "fire_pos": (0, 0), "last_pos": (0,0)}
 }
-punch_threshold = 45
-fire_duration = 0.8 # seconds
+PUNCH_THRESHOLD = 35
+FIST_RATIO = 0.18
+FIRE_DURATION = 0.8 # seconds
 
 cap = cv2.VideoCapture(0)
 
@@ -57,30 +60,31 @@ while cap.isOpened():
             wrist = hand[0]
             wx, wy = int(wrist.x * w), int(wrist.y * h)
 
+            if state["last_pos"] != (0,0):
+                curr_speed = math.hypot(wx - state["last_pos"][0], wy - state["last_pos"][1])
+                state["speeds"].append(curr_speed)
+
+            avg_speed = sum(state["speeds"]) / len(state["speeds"])
+            state["last_pos"] = (wx, wy)
+
             # is hand closed?
             # comparing distance between middle finger tip (12) to wrist(0)
             finger_tip = hand[12]
             fist_dist = math.hypot(finger_tip.x - wrist.x, finger_tip.y - wrist.y)
-            is_fist = fist_dist < 0.18
+            is_fist = fist_dist < FIST_RATIO
 
-            last_wx, last_wy = state["last_pos"]
-            if last_wx != 0:
-                speed = math.hypot(wx - last_wx, wy - last_wy)
-
-                # check if it's a punch
-                if speed > punch_threshold and is_fist:
-                    state["fire_time"] = time.time()
-                    state["fire_pos"] = (wx, wy)
-                    print(f"{hand_label} Fireball unleashed!")
-
-            state["last_pos"] = (wx,wy)
+            
+            if avg_speed > PUNCH_THRESHOLD and is_fist:
+                state["fire_time"] = time.time()
+                state["fire_pos"] = (wx, wy)
+                print(f"{hand_label} Fireball unleashed!")
 
             color = (0, 255, 0) if is_fist else (255, 0, 0)
             cv2.circle(frame, (wx, wy), 10, color, -1)
 
     # draw fire
     for label, state in hand_states.items():
-        if time.time() - state["fire_time"] < fire_duration:
+        if time.time() - state["fire_time"] < FIRE_DURATION:
             fx, fy = state["fire_pos"]
             
             top_left_x = fx - (fire_size // 2)
