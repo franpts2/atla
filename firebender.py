@@ -21,14 +21,26 @@ options = vision.HandLandmarkerOptions(
 )
 detector = vision.HandLandmarker.create_from_options(options)
 
-# deque to remember the last 5 speeds to filter out accidental spikes in motion
 hand_states = {
-    "Left":  {"speeds": deque([0]*5, maxlen=5), "fire_time": 0, "fire_pos": (0, 0), "last_pos": (0,0)},
-    "Right": {"speeds": deque([0]*5, maxlen=5), "fire_time": 0, "fire_pos": (0, 0), "last_pos": (0,0)}
+    "Left":  {
+        "speeds": deque([0]*5, maxlen=5), 
+        "fire_time": 0, 
+        "fire_pos": [0, 0],
+        "fire_vel": [0.0, 0.0],
+        "last_pos": [0, 0]
+    },
+    "Right": {
+        "speeds": deque([0]*5, maxlen=5), 
+        "fire_time": 0, 
+        "fire_pos": [0, 0],  
+        "fire_vel": [0.0, 0.0],
+        "last_pos": [0, 0]   
+    }
 }
 PUNCH_THRESHOLD = 35
 FIST_RATIO = 0.18
 FIRE_DURATION = 0.8 # seconds
+PROJECTILE_SPEED = 2.0  # multiplier
 
 cap = cv2.VideoCapture(0)
 
@@ -84,9 +96,22 @@ while cap.isOpened():
 
             
             if avg_speed > PUNCH_THRESHOLD and is_fist:
-                state["fire_time"] = time.time()
-                state["fire_pos"] = (fire_spawn_x, fire_spawn_y)
-                print(f"{hand_label} Fireball unleashed!")
+                dir_x = kx - wx
+                dir_y = ky - wy
+
+                mag = math.hypot(dir_x,dir_y)
+
+                if mag != 0:
+                    unit_x = dir_x / mag
+                    unit_y = dir_y / mag
+
+                    state["fire_time"] = time.time()
+                    state["fire_pos"] = [fire_spawn_x, fire_spawn_y]
+                    print(f"{hand_label} Fireball unleashed!")
+
+                    state["fire_vel"] = [unit_x * avg_speed * PROJECTILE_SPEED,
+                                         unit_y * avg_speed * PROJECTILE_SPEED]
+                
 
             color = (0, 255, 0) if is_fist else (255, 0, 0)
             cv2.circle(frame, (wx, wy), 10, color, -1)
@@ -94,6 +119,9 @@ while cap.isOpened():
     # draw fire
     for label, state in hand_states.items():
         if time.time() - state["fire_time"] < FIRE_DURATION:
+            state["fire_pos"][0] += int(state["fire_vel"][0])
+            state["fire_pos"][1] += int(state["fire_vel"][1])
+
             fx, fy = state["fire_pos"]
             
             top_left_x = fx - (fire_size // 2)
@@ -109,4 +137,3 @@ while cap.isOpened():
 
 cap.release()
 cv2.destroyAllWindows()
-
