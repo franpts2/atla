@@ -1,10 +1,12 @@
-# ATLA - Hand Tracking Project
+# ATLA — Hand Tracking
 
-<div align="left">
-	<img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python"/>
-	<img src="https://img.shields.io/badge/OpenCV-27338e?style=for-the-badge&logo=opencv&logoColor=white" alt="OpenCV"/>
-	<img src="https://img.shields.io/badge/MediaPipe-FF6F00?style=for-the-badge&logo=google&logoColor=white" alt="MediaPipe"/>
-</div>
+A hand-tracking and gesture-recognition experiment inspired by Avatar: The Last Airbender.
+
+<p align="left">
+  <img src="https://img.shields.io/badge/Python-FFD43B?style=for-the-badge&logo=python&logoColor=blue" alt="Python">
+  <img src="https://img.shields.io/badge/OpenCV-27338e?style=for-the-badge&logo=OpenCV&logoColor=white" alt="OpenCV">
+  <img src="https://img.shields.io/badge/MediaPipe-0097A7?style=for-the-badge" alt="MediaPipe">
+</p>
 
 ## About
 
@@ -16,7 +18,7 @@ Currently, only fire bending is implemented, with plans to add the other element
 
 The project leverages state-of-the-art machine learning models to detect and analyze hand landmarks in real time, enabling gesture-based interactions and applications.
 
-## Key Features
+## Features
 
 - Real-time hand detection and tracking
 - Gesture recognition using MediaPipe's hand landmark model
@@ -28,15 +30,9 @@ The project leverages state-of-the-art machine learning models to detect and ana
 
 ## Demo
 
-_Coming soon!_
+![Firebending gesture recognition](fireball.png)
 
-## Technical Implementation
-
-**Tech Stack**
-
-- Language: Python 3.8+
-- Computer Vision: OpenCV
-- ML Model: MediaPipe Hand Landmarker
+## How It Works
 
 **System Architecture**
 
@@ -60,7 +56,7 @@ atla/
 └── __pycache__/            # Python cache files
 ```
 
-## Setup
+## Quick Start
 
 1. **Install dependencies:**
    ```bash
@@ -69,19 +65,17 @@ atla/
 2. **Download the model:**
    Download `hand_landmarker.task` from [MediaPipe Models](https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task) and place it in the project root.
 
-## Features Implemented
-
-- Hand detection and landmark extraction
-- Real-time video processing with OpenCV
-- Modular code for easy extension
-
-## Planned Features
+## Roadmap
 
 - Earth, water, and air bending gesture recognition
 - Custom gesture recognition
 - Visualization improvements
 - Integration with other input modalities
 
+## License
+
+No license file is included. The source is public for reference; all rights reserved.
+
 ---
 
-_ATLA - Hand Tracking Project by Francisca Portugal_
+_ATLA — firebending, one gesture at a time._
