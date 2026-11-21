@@ -28,10 +28,6 @@ The project leverages state-of-the-art machine learning models to detect and ana
 - Modular utility functions for image processing
 - Ready for integration with custom gesture logic
 
-## Demo
-
-![Firebending gesture recognition](fireball.png)
-
 ## How It Works
 
 **System Architecture**
